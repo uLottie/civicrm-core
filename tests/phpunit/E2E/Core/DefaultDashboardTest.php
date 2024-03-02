@@ -53,4 +53,61 @@ class DefaultDashboardTest extends \MinkBase {
     // Delete all groups.
     Group::delete(FALSE)->addWhere('id', 'IN', [$gid1, $gid2])->execute();
   }
+
+  public function testDefaultCurrency() {
+    $session = $this->mink->getSession();
+    $page = $session->getPage();
+
+    // login
+    $this->login($GLOBALS['_CV']['ADMIN_USER']);
+    file_put_contents('/tmp/test-login.png', $this->mink->getSession()->getDriver()->getScreenshot());
+
+    // set the default currenty to USD
+    $results = \Civi\Api4\Setting::set(FALSE)
+      ->addValue('defaultCurrency', 'USD')
+      ->execute();
+
+    // add a product using USD
+    $results = \Civi\Api4\Product::create(TRUE)
+      ->addValue('name', '"Takeya Actives Insulated Water Bottle"')
+      ->addValue('description', '"Great spout on water bottle with flip lid."')
+      ->addValue('sku', '"WBOT-101"')
+      ->addValue('options', '"Black, Green, Red",')
+      ->addValue('price', 32)
+      ->addValue('currency', 'USD')
+      ->addValue('is_active', TRUE)
+      ->execute();
+
+    // add a product using EUR
+    $results = \Civi\Api4\Product::create(TRUE)
+      ->addValue('name', '"Black Bennie"')
+      ->addValue('description', '"Cotton beannie with logo."')
+      ->addValue('sku', '"BEAN101"')
+      ->addValue('options', '"Navy Blue, Orange, Pink",')
+      ->addValue('price', 10)
+      ->addValue('currency', 'EUR')
+      ->addValue('is_active', TRUE)
+      ->execute();
+
+    // load the Manage Product form
+    $this->visit(Civi::url('backend://civicrm/admin/contribute/managePremiums'));
+
+    // print the screenshot
+    $session->wait(5000, 'document.querySelector("afsearch-premium-products") != null');
+    //$session->wait(5000, FALSE);
+
+    file_put_contents('/tmp/test-searchProductPage.png', $this->mink->getSession()->getDriver()->getScreenshot());
+
+
+    $afformTable = $page->find('xpath', '//afsearch-premium-products//table');
+    //$rows = $afformTable->findAll('css', 'tbody tr');
+
+
+
+
+    // asset tha that the currency for product A is USD
+    // $this->assertSession()->pageTextContains('Event Income Summary');
+
+  }
+
 }
